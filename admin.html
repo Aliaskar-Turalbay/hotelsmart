@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HotelSmart — заявки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d13; --surface:rgba(255,255,255,.045); --surface-strong:rgba(255,255,255,.07);
+    --border:rgba(255,255,255,.09); --border-soft:rgba(255,255,255,.05);
+    --jade:#22b58a; --jade-dim:#1a8a6a; --jade-glow:rgba(34,181,138,.35);
+    --brass:#d9a441; --danger:#e2685a;
+    --text:#f2f3f0; --text-mute:#8d93a3; --text-faint:#5c6272;
+    --font-display:'Plus Jakarta Sans',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+    --ease:cubic-bezier(.22,.9,.32,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100vh; -webkit-font-smoothing:antialiased;}
+  body::before{
+    content:''; position:fixed; inset:0; z-index:0;
+    background:radial-gradient(ellipse 900px 500px at 15% -10%, rgba(34,181,138,.10), transparent 60%),
+                radial-gradient(ellipse 700px 500px at 100% 10%, rgba(217,164,65,.07), transparent 60%);
+    pointer-events:none;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 24px; position:relative; z-index:1;}
+
+  /* --- login screen --- */
+  #loginScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .login-card{
+    width:100%; max-width:380px; background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:36px; position:relative; z-index:1;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-family:var(--font-display); font-weight:700; font-size:17px; margin-bottom:26px;}
+  .brand-mark{width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--jade),var(--jade-dim)); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .login-card h1{font-family:var(--font-display); font-size:21px; font-weight:700; margin-bottom:6px;}
+  .login-card p.sub{color:var(--text-mute); font-size:13.5px; margin-bottom:24px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:11.5px; color:var(--text-faint); margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;}
+  .field input{width:100%; padding:12px 13px; border-radius:10px; background:#12161f; border:1px solid var(--border); color:var(--text); font-size:14px;}
+  .field input:focus{outline:2px solid var(--jade); outline-offset:1px;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px 20px; border-radius:999px; font-size:14px; font-weight:600; border:none; background:linear-gradient(135deg,var(--jade),var(--jade-dim)); color:#04120c; margin-top:6px; transition:transform .2s var(--ease), box-shadow .2s var(--ease);}
+  .btn:hover{transform:translateY(-2px); box-shadow:0 10px 26px -6px var(--jade-glow);}
+  .btn:disabled{opacity:.6; cursor:not-allowed; transform:none;}
+  .login-error{display:none; background:rgba(226,104,90,.1); border:1px solid rgba(226,104,90,.4); border-radius:10px; padding:11px 13px; font-size:13px; margin-top:14px; color:#f0a99e;}
+  .login-error.show{display:block;}
+  .login-note{font-size:12px; color:var(--text-faint); margin-top:18px; line-height:1.5;}
+
+  /* --- dashboard --- */
+  #dashboard{display:none;}
+  #dashboard.show{display:block;}
+  header{padding:24px 0; border-bottom:1px solid var(--border-soft); margin-bottom:28px;}
+  header .wrap{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;}
+  .status-pill{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--jade); padding:6px 13px; border-radius:999px; background:rgba(34,181,138,.1); border:1px solid rgba(34,181,138,.3);}
+  .status-pill::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--jade); box-shadow:0 0 0 3px var(--jade-glow); animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.4;}}
+  .logout-btn{padding:9px 16px; border-radius:999px; background:var(--surface); border:1px solid var(--border); color:var(--text-mute); font-size:13px;}
+  .logout-btn:hover{color:var(--text); background:var(--surface-strong);}
+
+  main{padding-bottom:80px;}
+  .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;}
+  .toolbar h2{font-family:var(--font-display); font-size:22px; font-weight:700;}
+  .count-chip{font-family:var(--font-mono); font-size:13px; color:var(--text-mute); background:var(--surface); border:1px solid var(--border-soft); padding:5px 12px; border-radius:999px;}
+
+  .lead-list{display:flex; flex-direction:column; gap:10px;}
+  .lead-card{
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:14px; padding:16px 18px;
+    display:grid; grid-template-columns:1fr 1fr 1fr 1fr auto; gap:14px; align-items:center;
+  }
+  .lead-card.is-new{animation:highlight 2.4s ease-out;}
+  @keyframes highlight{
+    0%{background:rgba(34,181,138,.18); border-color:rgba(34,181,138,.5);}
+    100%{background:var(--surface); border-color:var(--border-soft);}
+  }
+  .lead-field span{display:block; font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px;}
+  .lead-field b{font-size:14px; font-weight:600;}
+  .lead-time{font-family:var(--font-mono); font-size:12px; color:var(--text-faint); text-align:right; white-space:nowrap;}
+  .wa-link{display:inline-flex; align-items:center; gap:5px; font-size:12.5px; color:var(--jade); padding:6px 11px; border-radius:999px; background:rgba(34,181,138,.08); border:1px solid rgba(34,181,138,.3); white-space:nowrap;}
+  .wa-link:hover{background:rgba(34,181,138,.15);}
+
+  .empty-state{text-align:center; padding:60px 20px; color:var(--text-faint);}
+  .empty-state svg{width:40px; height:40px; margin-bottom:14px; opacity:.5;}
+
+  @media(max-width:760px){
+    .lead-card{grid-template-columns:1fr 1fr; row-gap:10px;}
+    .lead-time{grid-column:1/-1; text-align:left;}
+    .wa-link{grid-column:1/-1; justify-self:start;}
+  }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" stroke="#04120c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span>HotelSmart</span>
+    </div>
+    <h1>Панель заявок</h1>
+    <p class="sub">Войдите, чтобы увидеть заявки с сайта в реальном времени.</p>
+    <form id="loginForm">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" required autocomplete="username"></div>
+      <div class="field"><label>Пароль</label><input type="password" id="loginPassword" required autocomplete="current-password"></div>
+      <button type="submit" class="btn" id="loginBtn">Войти</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+    <p class="login-note">Доступ только для владельца — пользователя нужно создать заранее в Supabase: Authentication → Users → Add user.</p>
+  </div>
+</div>
+
+<div id="dashboard">
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <span class="brand-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" stroke="#04120c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span>HotelSmart</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="status-pill" id="statusPill">на связи</span>
+        <button class="logout-btn" id="logoutBtn">Выйти</button>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="toolbar">
+      <h2>Заявки</h2>
+      <span class="count-chip" id="countChip">0 заявок</span>
+    </div>
+    <div class="lead-list" id="leadList"></div>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6M9 8h1M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16l-4-2-3 2-3-2-4 2z"/></svg>
+      <div>Пока заявок нет — они появятся здесь сразу после отправки формы на сайте.</div>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const loginScreen = document.getElementById('loginScreen');
+  const dashboard = document.getElementById('dashboard');
+  const loginForm = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginError = document.getElementById('loginError');
+  const leadList = document.getElementById('leadList');
+  const emptyState = document.getElementById('emptyState');
+  const countChip = document.getElementById('countChip');
+  const statusPill = document.getElementById('statusPill');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  let supabase;
+
+  function showError(msg){
+    loginError.textContent = msg;
+    loginError.classList.add('show');
+  }
+
+  function fmtTime(iso){
+    const d = new Date(iso);
+    return d.toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function waHref(raw){
+    const digits = String(raw).replace(/[^\d]/g, '');
+    return 'https://wa.me/' + digits;
+  }
+
+  function renderLeads(leads){
+    countChip.textContent = leads.length + (leads.length === 1 ? ' заявка' : ' заявок');
+    emptyState.style.display = leads.length ? 'none' : 'block';
+    leadList.innerHTML = leads.map(function(l){
+      return (
+        '<div class="lead-card" data-id="' + l.id + '">' +
+          '<div class="lead-field"><span>Имя</span><b>' + escapeHtml(l.name) + '</b></div>' +
+          '<div class="lead-field"><span>Отель</span><b>' + escapeHtml(l.hotel) + '</b></div>' +
+          '<div class="lead-field"><span>Город</span><b>' + escapeHtml(l.city) + '</b></div>' +
+          '<a class="wa-link" target="_blank" href="' + waHref(l.whatsapp) + '">' + escapeHtml(l.whatsapp) + '</a>' +
+          '<div class="lead-time">' + fmtTime(l.created_at) + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function prependLead(lead){
+    const leads = currentLeads.slice();
+    leads.unshift(lead);
+    currentLeads = leads;
+    renderLeads(currentLeads);
+    const card = leadList.querySelector('[data-id="' + lead.id + '"]');
+    if(card) card.classList.add('is-new');
+  }
+
+  let currentLeads = [];
+
+  async function loadLeads(){
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if(error){
+      console.error(error);
+      return;
+    }
+    currentLeads = data || [];
+    renderLeads(currentLeads);
+  }
+
+  function subscribeRealtime(){
+    supabase
+      .channel('leads-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, function(payload){
+        prependLead(payload.new);
+      })
+      .subscribe(function(status){
+        if(status === 'SUBSCRIBED'){
+          statusPill.textContent = 'на связи · live';
+        } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+          statusPill.textContent = 'нет соединения';
+          statusPill.style.color = 'var(--danger)';
+        }
+      });
+  }
+
+  async function enterDashboard(){
+    loginScreen.style.display = 'none';
+    dashboard.classList.add('show');
+    await loadLeads();
+    subscribeRealtime();
+  }
+
+  async function init(){
+    let config;
+    try{
+      const res = await fetch('/api/config');
+      config = await res.json();
+      if(!res.ok) throw new Error(config.error || 'Ошибка конфигурации');
+    }catch(err){
+      showError('Не удалось загрузить конфигурацию сервера: ' + err.message);
+      loginBtn.disabled = true;
+      return;
+    }
+
+    supabase = createClient(config.url, config.anonKey);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if(session){
+      enterDashboard();
+    }
+  }
+
+  loginForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    loginError.classList.remove('show');
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Входим…';
+
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Войти';
+
+    if(error){
+      showError('Неверный email или пароль.');
+      return;
+    }
+    enterDashboard();
+  });
+
+  logoutBtn.addEventListener('click', async function(){
+    await supabase.auth.signOut();
+    location.reload();
+  });
+
+  init();
+</script>
+</body>
+</html>
